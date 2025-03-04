@@ -1,4 +1,3 @@
-```markdown
 # Odoo Installation Script
 
 Run the following Commands in Terminal:
@@ -18,4 +17,3 @@ Well done!
   ```bash
   source $HOME/odoo/odoo-venv/bin/activate && ./odoo-bin -c $HOME/odoo/odoo.conf
   ```
-```
