@@ -55,12 +55,11 @@ fi
 default_odoo_dir="$HOME/odoo"
 echo "Direktori Odoo akan dibuat di: $default_odoo_dir"
 
-# Meminta input dari pengguna untuk konfigurasi PostgreSQL
-echo "Masukkan nama pengguna PostgreSQL (default: odoo):"
-read db_user
-
-echo "Masukkan password PostgreSQL:"
-read -s db_password
+# Set konfigurasi PostgreSQL secara statis
+db_user="openpg"
+db_password="openpgpwd"
+echo "Menggunakan nama pengguna PostgreSQL: $db_user"
+echo "Menggunakan password PostgreSQL: $db_password"
 
 # Membuat direktori Odoo jika belum ada
 mkdir -p "$default_odoo_dir"
