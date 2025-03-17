@@ -67,9 +67,23 @@ mkdir -p "$default_odoo_dir"
 # Pindah ke direktori Odoo
 cd "$default_odoo_dir" || { echo "Gagal masuk ke direktori $default_odoo_dir"; exit 1; }
 
-# Mengunduh Odoo dari GitHub
-echo "Mengunduh Odoo..."
-git clone --depth 1 --branch 18.0 https://github.com/odoo/odoo.git
+# Mengunduh Odoo dari GitHub jika belum ada
+if [ ! -d "odoo" ]; then
+    echo "Mengunduh Odoo..."
+    git clone --depth 1 --branch 18.0 https://github.com/odoo/odoo.git
+else
+    echo "Direktori Odoo sudah ada, melewati proses unduh..."
+fi
+
+# Membuat user PostgreSQL
+echo "Membuat user PostgreSQL..."
+if ! psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='$db_user'" | grep -q 1; then
+    createuser -U postgres -s $db_user 2>/dev/null || sudo -u postgres createuser -s $db_user
+    psql -U postgres -c "ALTER USER $db_user WITH PASSWORD '$db_password';" 2>/dev/null || sudo -u postgres psql -c "ALTER USER $db_user WITH PASSWORD '$db_password';"
+    echo "User PostgreSQL berhasil dibuat"
+else
+    echo "User PostgreSQL sudah ada"
+fi
 
 # Mengonfigurasi file odoo.conf
 echo "Membuat file konfigurasi Odoo..."
@@ -102,7 +116,23 @@ npm install -g less less-plugin-clean-css
 # Memberikan izin akses ke file konfigurasi
 chmod 644 "$config_file"
 
+# Memastikan PostgreSQL berjalan
+echo "Memastikan PostgreSQL berjalan..."
+if ! brew services list | grep postgresql | grep started > /dev/null; then
+    echo "Menjalankan PostgreSQL..."
+    brew services start postgresql
+    # Tunggu beberapa detik sampai PostgreSQL siap
+    sleep 5
+else
+    echo "PostgreSQL sudah berjalan"
+fi
+
 # Menampilkan pesan sukses
 echo "Odoo berhasil diunduh dan dikonfigurasi!"
-echo "Anda dapat menjalankan Odoo dengan perintah berikut:"
-echo "cd $default_odoo_dir/odoo && source $default_odoo_dir/odoo-venv/bin/activate && python3 ./odoo-bin -c $default_odoo_dir/odoo.conf"
+echo "Menjalankan Odoo..."
+
+# Pindah ke direktori Odoo dan jalankan
+cd "$default_odoo_dir/odoo" && \
+source "$default_odoo_dir/odoo-venv/bin/activate" && \
+echo "Virtual environment diaktifkan, menjalankan Odoo..." && \
+python3 ./odoo-bin -c "$default_odoo_dir/odoo.conf"
