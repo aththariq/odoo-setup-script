@@ -105,4 +105,4 @@ chmod 644 "$config_file"
 # Menampilkan pesan sukses
 echo "Odoo berhasil diunduh dan dikonfigurasi!"
 echo "Anda dapat menjalankan Odoo dengan perintah berikut:"
-echo "source $default_odoo_dir/odoo-venv/bin/activate && ./odoo-bin -c $config_file"
+echo "cd $default_odoo_dir/odoo && source $default_odoo_dir/odoo-venv/bin/activate && python3 ./odoo-bin -c $default_odoo_dir/odoo.conf"
