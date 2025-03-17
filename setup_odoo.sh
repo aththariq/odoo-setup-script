@@ -140,7 +140,7 @@ db_user = $db_user
 db_password = $db_password
 addons_path = $default_odoo_dir/odoo/addons,$default_odoo_dir/custom-addons
 http_port = 8069
-http_interface = 127.0.0.1
+http_interface = 0.0.0.0
 EOF
 
 # Membuat direktori custom addons
