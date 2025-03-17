@@ -51,6 +51,12 @@ if ! check_installation "Git" "git"; then
     install_application "Git" "brew install git"
 fi
 
+# Periksa dan instal wkhtmltopdf
+if ! command -v wkhtmltopdf &> /dev/null; then
+    echo "Menginstal wkhtmltopdf..."
+    brew install wkhtmltopdf
+fi
+
 # Tentukan lokasi default untuk direktori Odoo
 default_odoo_dir="$HOME/odoo"
 echo "Direktori Odoo akan dibuat di: $default_odoo_dir"
@@ -134,6 +140,7 @@ db_user = $db_user
 db_password = $db_password
 addons_path = $default_odoo_dir/odoo/addons,$default_odoo_dir/custom-addons
 http_port = 8069
+http_interface = 127.0.0.1
 EOF
 
 # Membuat direktori custom addons
@@ -158,6 +165,9 @@ chmod 644 "$config_file"
 # Menampilkan pesan sukses
 echo "Odoo berhasil diunduh dan dikonfigurasi!"
 echo "Menjalankan Odoo..."
+echo "Setelah server berjalan, akses Odoo melalui browser di: http://localhost:8069"
+echo "Tekan Ctrl+C untuk menghentikan server"
+echo ""
 
 # Pindah ke direktori Odoo dan jalankan
 cd "$default_odoo_dir/odoo" && \
