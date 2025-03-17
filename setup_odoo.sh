@@ -75,12 +75,50 @@ else
     echo "Direktori Odoo sudah ada, melewati proses unduh..."
 fi
 
-# Membuat user PostgreSQL
+# Memastikan PostgreSQL berjalan
+echo "Memastikan PostgreSQL berjalan..."
+if ! brew services list | grep postgresql | grep started > /dev/null; then
+    echo "Menjalankan PostgreSQL..."
+    brew services start postgresql
+    # Tunggu beberapa detik sampai PostgreSQL siap
+    sleep 5
+else
+    echo "PostgreSQL sudah berjalan"
+fi
+
+# Membuat user PostgreSQL dengan penanganan error yang lebih baik
 echo "Membuat user PostgreSQL..."
+# Mendapatkan username sistem saat ini
+current_user=$(whoami)
+
+# Mencoba membuat user PostgreSQL dengan berbagai metode
+create_pg_user() {
+    # Coba dengan user sistem saat ini
+    psql postgres -c "CREATE USER $db_user WITH SUPERUSER PASSWORD '$db_password';" 2>/dev/null || \
+    # Coba dengan postgres user
+    psql -U postgres -c "CREATE USER $db_user WITH SUPERUSER PASSWORD '$db_password';" 2>/dev/null || \
+    # Coba dengan sudo
+    sudo -u $current_user createuser -s $db_user 2>/dev/null || \
+    sudo -u postgres createuser -s $db_user 2>/dev/null
+    
+    # Set password
+    psql postgres -c "ALTER USER $db_user WITH PASSWORD '$db_password';" 2>/dev/null || \
+    psql -U postgres -c "ALTER USER $db_user WITH PASSWORD '$db_password';" 2>/dev/null || \
+    sudo -u $current_user psql postgres -c "ALTER USER $db_user WITH PASSWORD '$db_password';" 2>/dev/null
+}
+
+# Cek apakah user sudah ada
 if ! psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='$db_user'" | grep -q 1; then
-    createuser -U postgres -s $db_user 2>/dev/null || sudo -u postgres createuser -s $db_user
-    psql -U postgres -c "ALTER USER $db_user WITH PASSWORD '$db_password';" 2>/dev/null || sudo -u postgres psql -c "ALTER USER $db_user WITH PASSWORD '$db_password';"
-    echo "User PostgreSQL berhasil dibuat"
+    echo "Mencoba membuat user PostgreSQL..."
+    if create_pg_user; then
+        echo "User PostgreSQL berhasil dibuat"
+    else
+        echo "Gagal membuat user PostgreSQL secara otomatis"
+        echo "Mencoba membuat database dengan user sistem saat ini..."
+        # Gunakan user sistem saat ini sebagai fallback
+        db_user=$current_user
+        echo "Menggunakan user sistem: $db_user"
+    fi
 else
     echo "User PostgreSQL sudah ada"
 fi
@@ -95,6 +133,7 @@ db_port = 5432
 db_user = $db_user
 db_password = $db_password
 addons_path = $default_odoo_dir/odoo/addons,$default_odoo_dir/custom-addons
+http_port = 8069
 EOF
 
 # Membuat direktori custom addons
@@ -115,17 +154,6 @@ npm install -g less less-plugin-clean-css
 
 # Memberikan izin akses ke file konfigurasi
 chmod 644 "$config_file"
-
-# Memastikan PostgreSQL berjalan
-echo "Memastikan PostgreSQL berjalan..."
-if ! brew services list | grep postgresql | grep started > /dev/null; then
-    echo "Menjalankan PostgreSQL..."
-    brew services start postgresql
-    # Tunggu beberapa detik sampai PostgreSQL siap
-    sleep 5
-else
-    echo "PostgreSQL sudah berjalan"
-fi
 
 # Menampilkan pesan sukses
 echo "Odoo berhasil diunduh dan dikonfigurasi!"
