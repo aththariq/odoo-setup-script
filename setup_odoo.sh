@@ -36,33 +36,48 @@ if ! check_installation "Python" "python3"; then
     install_application "Python" "brew install python"
 fi
 
+# Deteksi shell yang digunakan untuk konfigurasi path
+CURRENT_SHELL=$(basename "$SHELL")
+echo "Shell terdeteksi: $CURRENT_SHELL"
+
 # Periksa versi Python dan update jika perlu
 python_version=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
 python_required_version="3.10.0"
 echo "Versi Python terdeteksi: $python_version"
 echo "Versi minimal yang dibutuhkan: $python_required_version"
 
-# Bandingkan versi menggunakan sort -V
-if [ "$(printf '%s\n' "$python_required_version" "$python_version" | sort -V | head -n1)" = "$python_required_version" ]; then
-    echo "Versi Python sudah memenuhi syarat."
+# Installasi Python 3.10 secara khusus untuk memastikan
+echo "Menginstal Python 3.10 untuk kompatibilitas dengan Odoo 18.0..."
+brew update
+brew install python@3.10
+
+# Tambahkan ke PATH dan buat symlink untuk memastikan menggunakan versi yang benar
+echo "Mengkonfigurasi Python 3.10..."
+brew link --force python@3.10
+export PATH="/usr/local/opt/python@3.10/bin:$PATH"
+
+# Jangan lupa tambahkan ini ke file konfigurasi shell
+if [[ "$CURRENT_SHELL" == "zsh" ]]; then
+    shell_config="$HOME/.zshrc"
+    grep -q 'export PATH="/usr/local/opt/python@3.10/bin:$PATH"' "$shell_config" || echo 'export PATH="/usr/local/opt/python@3.10/bin:$PATH"' >> "$shell_config"
+elif [[ "$CURRENT_SHELL" == "bash" ]]; then
+    shell_config="$HOME/.bash_profile"
+    grep -q 'export PATH="/usr/local/opt/python@3.10/bin:$PATH"' "$shell_config" || echo 'export PATH="/usr/local/opt/python@3.10/bin:$PATH"' >> "$shell_config"
+fi
+
+# Verifikasi versi Python setelah konfigurasi
+python3_path=$(which python3)
+python_version=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
+echo "Python path setelah konfigurasi: $python3_path"
+echo "Versi Python setelah konfigurasi: $python_version"
+
+# Periksa kembali versi Python
+if [ "$(printf '%s\n' "$python_required_version" "$python_version" | sort -V | head -n1)" != "$python_required_version" ]; then
+    echo "PERINGATAN: Versi Python 3.10+ diperlukan tetapi tidak dapat dikonfigurasi secara otomatis."
+    echo "Silakan instal Python 3.10+ secara manual dan pastikan itu adalah versi default."
+    exit 1
 else
-    echo "Versi Python terlalu lama. Memperbarui Python..."
-    brew update
-    brew upgrade python
-    # Periksa versi Python lagi setelah update
-    python_version=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
-    echo "Python diperbarui ke versi: $python_version"
-    # Jika masih belum cukup, coba install Python 3.10 secara khusus
-    if [ "$(printf '%s\n' "$python_required_version" "$python_version" | sort -V | head -n1)" != "$python_required_version" ]; then
-        echo "Mencoba menginstal Python 3.10 secara khusus..."
-        brew install python@3.10
-        # Tambahkan ke PATH
-        export PATH="/usr/local/opt/python@3.10/bin:$PATH"
-        # Periksa kembali path python3
-        which python3
-        python_version=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
-        echo "Python path dan versi setelah instalasi khusus: $(which python3) - $python_version"
-    fi
+    echo "Versi Python sudah memenuhi syarat untuk Odoo 18.0."
 fi
 
 # Periksa Node.js
@@ -203,14 +218,27 @@ echo "Menginstal dependensi Python..."
 python_path=$(which python3)
 echo "Menggunakan Python dari: $python_path"
 
+# Hapus virtual environment yang ada jika sudah ada
+if [ -d "odoo-venv" ]; then
+    echo "Menghapus virtual environment lama..."
+    rm -rf odoo-venv
+fi
+
 # Buat virtual environment dengan Python yang benar
-echo "Membuat virtual environment dengan $python_path..."
+echo "Membuat virtual environment baru dengan $python_path..."
 $python_path -m venv odoo-venv
 source odoo-venv/bin/activate
 
 # Verifikasi versi Python dalam virtual environment
 python_venv_version=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
 echo "Versi Python dalam virtual environment: $python_venv_version"
+
+# Periksa kembali versi dalam venv
+if [ "$(printf '%s\n' "$python_required_version" "$python_venv_version" | sort -V | head -n1)" != "$python_required_version" ]; then
+    echo "PERINGATAN: Virtual environment menggunakan Python versi lama."
+    echo "Membatalkan instalasi. Silakan pastikan Python 3.10+ tersedia di sistem Anda."
+    exit 1
+fi
 
 pip install --upgrade pip
 pip install -r "$default_odoo_dir/odoo/requirements.txt"
@@ -228,10 +256,7 @@ chmod 644 "$config_file"
 echo "Menambahkan alias 'odoo-start' ke file konfigurasi shell..."
 alias_command="alias odoo-start=\"cd $default_odoo_dir/odoo && source $default_odoo_dir/odoo-venv/bin/activate && python3 ./odoo-bin -c $default_odoo_dir/odoo.conf\""
 
-# Deteksi shell yang digunakan dengan pendekatan yang lebih baik
-CURRENT_SHELL=$(basename "$SHELL")
-echo "Shell terdeteksi: $CURRENT_SHELL"
-
+# Set shell_config based on CURRENT_SHELL
 if [[ "$CURRENT_SHELL" == "zsh" ]]; then
     shell_config="$HOME/.zshrc"
     echo "Menambahkan alias ke $shell_config"

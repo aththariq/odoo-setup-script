@@ -2,12 +2,18 @@
 
 This script automates the installation and configuration of Odoo 18.0 on macOS systems.
 
+## Important Notes
+
+- **Odoo 18.0 strictly requires Python 3.10 or newer**
+- The script will automatically install Python 3.10 via Homebrew and configure it for Odoo
+- If you have multiple Python versions installed, the script will ensure Python 3.10 is used for Odoo
+
 ## Prerequisites
 
 The script will check and install these requirements if not present:
 
 - Homebrew
-- Python 3.10 or newer (the script will try to install or update Python if needed)
+- Python 3.10 (will be installed automatically regardless of existing Python version)
 - PostgreSQL
 - Node.js
 - Git
@@ -65,23 +71,36 @@ cd ~/odoo/odoo && source ~/odoo/odoo-venv/bin/activate && python3 ./odoo-bin -c 
 
 If you encounter issues:
 
-1. Ensure PostgreSQL is running:
+1. Python version issues (most common problem):
+
+   ```bash
+   # If you get "Outdated python version detected" error:
+   brew install python@3.10
+   brew link --force python@3.10
+   echo 'export PATH="/usr/local/opt/python@3.10/bin:$PATH"' >> ~/.zshrc
+   source ~/.zshrc
+   # Then check your Python version:
+   python3 --version  # Should show 3.10.x or newer
+   # Re-run the setup script
+   ```
+
+2. Ensure PostgreSQL is running:
    ```bash
    brew services list | grep postgresql
    ```
-2. Start PostgreSQL if needed:
+3. Start PostgreSQL if needed:
    ```bash
    brew services start postgresql
    ```
-3. If wkhtmltopdf installation fails (required for PDF reports):
+4. If wkhtmltopdf installation fails (required for PDF reports):
    ```bash
    # Install wkhtmltopdf manually
    curl -L -o wkhtmltox.pkg "https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-2/wkhtmltox-0.12.6-2.macos-cocoa.pkg"
    sudo installer -pkg wkhtmltox.pkg -target /
    ```
-4. Check Odoo logs in the terminal for any error messages
-5. Make sure port 8069 is not being used by another application
-6. If the `odoo-start` command doesn't work:
+5. Check Odoo logs in the terminal for any error messages
+6. Make sure port 8069 is not being used by another application
+7. If the `odoo-start` command doesn't work:
 
    ```bash
    # For zsh (default in newer macOS):
