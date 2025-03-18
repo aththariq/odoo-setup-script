@@ -7,7 +7,7 @@ This script automates the installation and configuration of Odoo 18.0 on macOS s
 The script will check and install these requirements if not present:
 
 - Homebrew
-- Python 3
+- Python 3.10 or newer (the script will try to install or update Python if needed)
 - PostgreSQL
 - Node.js
 - Git
@@ -83,3 +83,30 @@ To stop the Odoo server, press `Ctrl+C` in the terminal where it's running.
 ## Support
 
 For issues and contributions, please visit the GitHub repository.
+
+## Quick Start Guide (Setelah Instalasi)
+
+Setelah menjalankan script untuk pertama kalinya, Anda tidak perlu mengunduh dan menjalankan script lagi untuk memulai Odoo di lain waktu. Cukup gunakan perintah berikut:
+
+```bash
+cd ~/odoo/odoo && source ~/odoo/odoo-venv/bin/activate && python3 ./odoo-bin -c ~/odoo/odoo.conf
+```
+
+Anda juga bisa membuat alias di file `~/.zshrc` atau `~/.bash_profile` untuk memudahkan menjalankan Odoo:
+
+```bash
+# Tambahkan baris ini ke file ~/.zshrc atau ~/.bash_profile
+alias odoo-start="cd ~/odoo/odoo && source ~/odoo/odoo-venv/bin/activate && python3 ./odoo-bin -c ~/odoo/odoo.conf"
+```
+
+Setelah menambahkan alias, jalankan:
+
+```bash
+source ~/.zshrc  # atau source ~/.bash_profile
+```
+
+Kemudian Anda bisa menjalankan Odoo kapan saja cukup dengan mengetik:
+
+```bash
+odoo-start
+```

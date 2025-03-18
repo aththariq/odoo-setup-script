@@ -36,6 +36,35 @@ if ! check_installation "Python" "python3"; then
     install_application "Python" "brew install python"
 fi
 
+# Periksa versi Python dan update jika perlu
+python_version=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
+python_required_version="3.10.0"
+echo "Versi Python terdeteksi: $python_version"
+echo "Versi minimal yang dibutuhkan: $python_required_version"
+
+# Bandingkan versi menggunakan sort -V
+if [ "$(printf '%s\n' "$python_required_version" "$python_version" | sort -V | head -n1)" = "$python_required_version" ]; then
+    echo "Versi Python sudah memenuhi syarat."
+else
+    echo "Versi Python terlalu lama. Memperbarui Python..."
+    brew update
+    brew upgrade python
+    # Periksa versi Python lagi setelah update
+    python_version=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
+    echo "Python diperbarui ke versi: $python_version"
+    # Jika masih belum cukup, coba install Python 3.10 secara khusus
+    if [ "$(printf '%s\n' "$python_required_version" "$python_version" | sort -V | head -n1)" != "$python_required_version" ]; then
+        echo "Mencoba menginstal Python 3.10 secara khusus..."
+        brew install python@3.10
+        # Tambahkan ke PATH
+        export PATH="/usr/local/opt/python@3.10/bin:$PATH"
+        # Periksa kembali path python3
+        which python3
+        python_version=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
+        echo "Python path dan versi setelah instalasi khusus: $(which python3) - $python_version"
+    fi
+fi
+
 # Periksa Node.js
 if ! check_installation "Node.js" "node"; then
     install_application "Node.js" "brew install node"
@@ -148,8 +177,20 @@ mkdir -p "$default_odoo_dir/custom-addons"
 
 # Menginstal dependensi Python
 echo "Menginstal dependensi Python..."
-python3 -m venv odoo-venv
+
+# Dapatkan path ke Python 3.10+ yang benar
+python_path=$(which python3)
+echo "Menggunakan Python dari: $python_path"
+
+# Buat virtual environment dengan Python yang benar
+echo "Membuat virtual environment dengan $python_path..."
+$python_path -m venv odoo-venv
 source odoo-venv/bin/activate
+
+# Verifikasi versi Python dalam virtual environment
+python_venv_version=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
+echo "Versi Python dalam virtual environment: $python_venv_version"
+
 pip install --upgrade pip
 pip install -r "$default_odoo_dir/odoo/requirements.txt"
 
@@ -167,6 +208,9 @@ echo "Odoo berhasil diunduh dan dikonfigurasi!"
 echo "Menjalankan Odoo..."
 echo "Setelah server berjalan, akses Odoo melalui browser di: http://localhost:8069"
 echo "Tekan Ctrl+C untuk menghentikan server"
+echo ""
+echo "TIP: Untuk memudahkan menjalankan Odoo di masa depan, Anda dapat menambahkan alias berikut ke file ~/.zshrc atau ~/.bash_profile:"
+echo "alias odoo-start=\"cd ~/odoo/odoo && source ~/odoo/odoo-venv/bin/activate && python3 ./odoo-bin -c ~/odoo/odoo.conf\""
 echo ""
 
 # Pindah ke direktori Odoo dan jalankan
