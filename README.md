@@ -11,7 +11,7 @@ The script will check and install these requirements if not present:
 - PostgreSQL
 - Node.js
 - Git
-- wkhtmltopdf
+- wkhtmltopdf (installed from official website since discontinued in Homebrew)
 
 ## Installation
 
@@ -73,8 +73,25 @@ If you encounter issues:
    ```bash
    brew services start postgresql
    ```
-3. Check Odoo logs in the terminal for any error messages
-4. Make sure port 8069 is not being used by another application
+3. If wkhtmltopdf installation fails (required for PDF reports):
+   ```bash
+   # Install wkhtmltopdf manually
+   curl -L -o wkhtmltox.pkg "https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-2/wkhtmltox-0.12.6-2.macos-cocoa.pkg"
+   sudo installer -pkg wkhtmltox.pkg -target /
+   ```
+4. Check Odoo logs in the terminal for any error messages
+5. Make sure port 8069 is not being used by another application
+6. If the `odoo-start` command doesn't work:
+
+   ```bash
+   # For zsh (default in newer macOS):
+   echo 'alias odoo-start="cd ~/odoo/odoo && source ~/odoo/odoo-venv/bin/activate && python3 ./odoo-bin -c ~/odoo/odoo.conf"' >> ~/.zshrc
+   source ~/.zshrc
+
+   # For bash:
+   echo 'alias odoo-start="cd ~/odoo/odoo && source ~/odoo/odoo-venv/bin/activate && python3 ./odoo-bin -c ~/odoo/odoo.conf"' >> ~/.bash_profile
+   source ~/.bash_profile
+   ```
 
 ## Stopping Odoo
 
@@ -86,12 +103,16 @@ For issues and contributions, please visit the GitHub repository.
 
 ## Quick Start Guide (Setelah Instalasi)
 
-Setelah menjalankan script untuk pertama kalinya, script secara otomatis menambahkan alias `odoo-start` ke file konfigurasi shell Anda (~/.zshrc atau ~/.bash_profile).
+Setelah menjalankan script untuk pertama kalinya, script secara otomatis menambahkan alias `odoo-start` ke file konfigurasi shell Anda (~/.zshrc atau ~/.bash_profile) dan mengaktifkannya untuk sesi saat ini.
 
-Untuk mengaktifkan alias setelah script selesai, jalankan:
+Untuk sesi terminal baru, aktifkan alias dengan:
 
 ```bash
-source ~/.zshrc  # atau source ~/.bash_profile
+# Jika menggunakan zsh (default di macOS terbaru):
+source ~/.zshrc
+
+# Jika menggunakan bash:
+source ~/.bash_profile
 ```
 
 Kemudian Anda bisa menjalankan Odoo kapan saja cukup dengan mengetik:

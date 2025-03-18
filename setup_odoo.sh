@@ -80,10 +80,31 @@ if ! check_installation "Git" "git"; then
     install_application "Git" "brew install git"
 fi
 
-# Periksa dan instal wkhtmltopdf
+# Periksa dan instal wkhtmltopdf dengan alternatif karena discontinued di Homebrew
 if ! command -v wkhtmltopdf &> /dev/null; then
     echo "Menginstal wkhtmltopdf..."
-    brew install wkhtmltopdf
+    # Menggunakan versi terbaru yang tersedia di website resmi
+    WKHTML_VERSION="0.12.6-2"
+    DOWNLOAD_URL="https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTML_VERSION}/wkhtmltox-${WKHTML_VERSION}.macos-cocoa.pkg"
+    
+    # Download installer
+    echo "Mengunduh wkhtmltopdf dari $DOWNLOAD_URL..."
+    curl -L -o wkhtmltox.pkg "$DOWNLOAD_URL"
+    
+    # Install package
+    echo "Menginstal wkhtmltopdf... (mungkin meminta password)"
+    sudo installer -pkg wkhtmltox.pkg -target /
+    
+    # Bersihkan file installer
+    rm wkhtmltox.pkg
+    
+    # Verifikasi instalasi
+    if command -v wkhtmltopdf &> /dev/null; then
+        echo "wkhtmltopdf berhasil diinstal."
+    else
+        echo "Peringatan: Instalasi wkhtmltopdf tidak berhasil. Laporan PDF mungkin tidak berfungsi."
+        echo "Anda dapat menginstal secara manual dari: https://wkhtmltopdf.org/downloads.html"
+    fi
 fi
 
 # Tentukan lokasi default untuk direktori Odoo
@@ -203,29 +224,24 @@ npm install -g less less-plugin-clean-css
 # Memberikan izin akses ke file konfigurasi
 chmod 644 "$config_file"
 
-# Tambahkan alias ke ~/.zshrc atau ~/.bash_profile
+# Tambahkan alias ke file konfigurasi shell
 echo "Menambahkan alias 'odoo-start' ke file konfigurasi shell..."
 alias_command="alias odoo-start=\"cd $default_odoo_dir/odoo && source $default_odoo_dir/odoo-venv/bin/activate && python3 ./odoo-bin -c $default_odoo_dir/odoo.conf\""
 
-# Deteksi shell yang digunakan
-if [ -n "$ZSH_VERSION" ]; then
+# Deteksi shell yang digunakan dengan pendekatan yang lebih baik
+CURRENT_SHELL=$(basename "$SHELL")
+echo "Shell terdeteksi: $CURRENT_SHELL"
+
+if [[ "$CURRENT_SHELL" == "zsh" ]]; then
     shell_config="$HOME/.zshrc"
-    echo "Shell ZSH terdeteksi, menambahkan alias ke $shell_config"
-elif [ -n "$BASH_VERSION" ]; then
+    echo "Menambahkan alias ke $shell_config"
+elif [[ "$CURRENT_SHELL" == "bash" ]]; then
     shell_config="$HOME/.bash_profile"
-    echo "Shell Bash terdeteksi, menambahkan alias ke $shell_config"
+    echo "Menambahkan alias ke $shell_config"
 else
-    # Jika tidak dapat mendeteksi, coba cek file yang ada
-    if [ -f "$HOME/.zshrc" ]; then
-        shell_config="$HOME/.zshrc"
-        echo "Menambahkan alias ke $shell_config"
-    elif [ -f "$HOME/.bash_profile" ]; then
-        shell_config="$HOME/.bash_profile"
-        echo "Menambahkan alias ke $shell_config"
-    else
-        shell_config="$HOME/.zshrc"
-        echo "Membuat file $shell_config dan menambahkan alias"
-    fi
+    # Fallback ke zsh karena macOS modern menggunakan zsh sebagai default
+    shell_config="$HOME/.zshrc"
+    echo "Shell tidak terdeteksi, menggunakan zsh sebagai default. Menambahkan alias ke $shell_config"
 fi
 
 # Periksa apakah alias sudah ada di file konfigurasi
@@ -239,10 +255,14 @@ else
     echo "Alias berhasil ditambahkan ke $shell_config"
 fi
 
-# Muat ulang konfigurasi shell
-echo "Alias sudah ditambahkan. Setelah script selesai, Anda bisa menjalankan:"
-echo "source $shell_config"
-echo "Kemudian cukup ketik 'odoo-start' untuk menjalankan Odoo di masa depan."
+# Aktifkan alias secara otomatis dalam sesi shell saat ini
+echo "$alias_command" > /tmp/odoo_alias_temp
+source /tmp/odoo_alias_temp
+rm /tmp/odoo_alias_temp
+
+echo "Alias sudah ditambahkan dan diaktifkan untuk sesi ini."
+echo "Untuk sesi terminal baru, mohon jalankan: source $shell_config"
+echo "Selanjutnya Anda bisa langsung menjalankan Odoo dengan mengetik: odoo-start"
 
 # Menampilkan pesan sukses
 echo "Odoo berhasil diunduh dan dikonfigurasi!"
