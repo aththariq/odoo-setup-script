@@ -86,20 +86,9 @@ For issues and contributions, please visit the GitHub repository.
 
 ## Quick Start Guide (Setelah Instalasi)
 
-Setelah menjalankan script untuk pertama kalinya, Anda tidak perlu mengunduh dan menjalankan script lagi untuk memulai Odoo di lain waktu. Cukup gunakan perintah berikut:
+Setelah menjalankan script untuk pertama kalinya, script secara otomatis menambahkan alias `odoo-start` ke file konfigurasi shell Anda (~/.zshrc atau ~/.bash_profile).
 
-```bash
-cd ~/odoo/odoo && source ~/odoo/odoo-venv/bin/activate && python3 ./odoo-bin -c ~/odoo/odoo.conf
-```
-
-Anda juga bisa membuat alias di file `~/.zshrc` atau `~/.bash_profile` untuk memudahkan menjalankan Odoo:
-
-```bash
-# Tambahkan baris ini ke file ~/.zshrc atau ~/.bash_profile
-alias odoo-start="cd ~/odoo/odoo && source ~/odoo/odoo-venv/bin/activate && python3 ./odoo-bin -c ~/odoo/odoo.conf"
-```
-
-Setelah menambahkan alias, jalankan:
+Untuk mengaktifkan alias setelah script selesai, jalankan:
 
 ```bash
 source ~/.zshrc  # atau source ~/.bash_profile
@@ -110,3 +99,5 @@ Kemudian Anda bisa menjalankan Odoo kapan saja cukup dengan mengetik:
 ```bash
 odoo-start
 ```
+
+Tidak perlu lagi menjalankan script instalasi atau memasukkan perintah panjang. Cukup ketik `odoo-start` untuk menjalankan Odoo!

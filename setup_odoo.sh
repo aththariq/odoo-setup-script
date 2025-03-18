@@ -203,16 +203,53 @@ npm install -g less less-plugin-clean-css
 # Memberikan izin akses ke file konfigurasi
 chmod 644 "$config_file"
 
+# Tambahkan alias ke ~/.zshrc atau ~/.bash_profile
+echo "Menambahkan alias 'odoo-start' ke file konfigurasi shell..."
+alias_command="alias odoo-start=\"cd $default_odoo_dir/odoo && source $default_odoo_dir/odoo-venv/bin/activate && python3 ./odoo-bin -c $default_odoo_dir/odoo.conf\""
+
+# Deteksi shell yang digunakan
+if [ -n "$ZSH_VERSION" ]; then
+    shell_config="$HOME/.zshrc"
+    echo "Shell ZSH terdeteksi, menambahkan alias ke $shell_config"
+elif [ -n "$BASH_VERSION" ]; then
+    shell_config="$HOME/.bash_profile"
+    echo "Shell Bash terdeteksi, menambahkan alias ke $shell_config"
+else
+    # Jika tidak dapat mendeteksi, coba cek file yang ada
+    if [ -f "$HOME/.zshrc" ]; then
+        shell_config="$HOME/.zshrc"
+        echo "Menambahkan alias ke $shell_config"
+    elif [ -f "$HOME/.bash_profile" ]; then
+        shell_config="$HOME/.bash_profile"
+        echo "Menambahkan alias ke $shell_config"
+    else
+        shell_config="$HOME/.zshrc"
+        echo "Membuat file $shell_config dan menambahkan alias"
+    fi
+fi
+
+# Periksa apakah alias sudah ada di file konfigurasi
+if grep -q "alias odoo-start=" "$shell_config" 2>/dev/null; then
+    echo "Alias odoo-start sudah ada di $shell_config"
+else
+    # Tambahkan alias
+    echo "" >> "$shell_config"
+    echo "# Alias untuk menjalankan Odoo" >> "$shell_config"
+    echo "$alias_command" >> "$shell_config"
+    echo "Alias berhasil ditambahkan ke $shell_config"
+fi
+
+# Muat ulang konfigurasi shell
+echo "Alias sudah ditambahkan. Setelah script selesai, Anda bisa menjalankan:"
+echo "source $shell_config"
+echo "Kemudian cukup ketik 'odoo-start' untuk menjalankan Odoo di masa depan."
+
 # Menampilkan pesan sukses
 echo "Odoo berhasil diunduh dan dikonfigurasi!"
 echo "Menjalankan Odoo..."
 echo "Setelah server berjalan, akses Odoo melalui browser di: http://localhost:8069"
 echo "Tekan Ctrl+C untuk menghentikan server"
 echo ""
-echo "TIP: Untuk memudahkan menjalankan Odoo di masa depan, Anda dapat menambahkan alias berikut ke file ~/.zshrc atau ~/.bash_profile:"
-echo "alias odoo-start=\"cd ~/odoo/odoo && source ~/odoo/odoo-venv/bin/activate && python3 ./odoo-bin -c ~/odoo/odoo.conf\""
-echo ""
-
 # Pindah ke direktori Odoo dan jalankan
 cd "$default_odoo_dir/odoo" && \
 source "$default_odoo_dir/odoo-venv/bin/activate" && \
